@@ -43,7 +43,9 @@ let baseUrl: string
 let wsUrl: string
 
 beforeEach(async () => {
-  plane = createControlPlane({ config: seedConfig, adminToken: ADMIN_TOKEN })
+  // Pin the initial version so the HTTP/WS assertions below stay deterministic;
+  // the default (epoch) seeding is covered separately in "version durability".
+  plane = createControlPlane({ config: seedConfig, adminToken: ADMIN_TOKEN, initialVersion: 1 })
   const port = await plane.listen(0)
   baseUrl = `http://127.0.0.1:${port}`
   wsUrl = `ws://127.0.0.1:${port}/config/stream`
@@ -135,6 +137,21 @@ describe('control plane — HTTP', () => {
     const occupied = new URL(baseUrl).port
     const second = createControlPlane({ config: seedConfig, adminToken: ADMIN_TOKEN })
     await expect(second.listen(Number(occupied))).rejects.toMatchObject({ code: 'EADDRINUSE' })
+  })
+})
+
+describe('control plane — version durability across restarts', () => {
+  it('seeds the version from an epoch by default (never rewinds to 1 on restart)', () => {
+    const fresh = createControlPlane({ config: seedConfig, adminToken: ADMIN_TOKEN })
+    // A real epoch-ms value, not the old reset-to-1 default.
+    expect(fresh.store.snapshot().version).toBeGreaterThan(1_000_000_000_000)
+  })
+
+  it('a later-started control plane keeps a strictly higher version (monotonic across restart)', () => {
+    const earlier = createControlPlane({ config: seedConfig, adminToken: ADMIN_TOKEN, initialVersion: 1_000 })
+    earlier.store.replace(validNewConfig) // -> 1001
+    const restarted = createControlPlane({ config: seedConfig, adminToken: ADMIN_TOKEN, initialVersion: 2_000 })
+    expect(restarted.store.snapshot().version).toBeGreaterThan(earlier.store.snapshot().version)
   })
 })
 

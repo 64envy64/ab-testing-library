@@ -8,7 +8,7 @@ plane.
 ![license](https://img.shields.io/badge/license-MIT-22c55e)
 ![types](https://img.shields.io/badge/types-included-22c55e)
 ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-22c55e)
-![core size](https://img.shields.io/badge/core-~6.8kB%20br-22c55e)
+![core size](https://img.shields.io/badge/core-~7.1kB%20br-22c55e)
 
 ```ts
 const client = createAbClient({ appKey: 'web', remote: { url: 'wss://…/config/stream' } })
@@ -168,6 +168,7 @@ client.clearForcedOverride(key?)
 client.loadForcedOverridesFromUrl(new URLSearchParams(location.search)) // ?ab_force_<key>=<variant>
 
 client.subscribe(listener)               // → unsubscribe
+client.ready()                           // → Promise<void> (resolves when ready: initialized + first remote sync)
 client.resetAssignment(key)
 client.reset() / client.clear()          // full wipe (logout / right-to-be-forgotten)
 client.getDebugState()                   // read-only snapshot (no PII)

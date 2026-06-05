@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  findDuplicateSeeds,
   normalizeExperimentConfig,
   validateExperimentConfig,
   validateFeatureFlagConfig,
@@ -171,5 +172,42 @@ describe('normalizeExperimentConfig', () => {
     const normalized = normalizeExperimentConfig(config)
     expect(normalized.variants.map((variant) => variant.key)).toEqual(['a', 'b', 'c'])
     expect(config.variants.map((variant) => variant.key)).toEqual(['c', 'a', 'b'])
+  })
+})
+
+describe('findDuplicateSeeds', () => {
+  it('returns no issues when every seed is unique', () => {
+    expect(
+      findDuplicateSeeds({
+        experiments: { a: { seed: 's1' }, b: { seed: 's2' } },
+        flags: { f: { seed: 's3' } },
+      }),
+    ).toEqual([])
+  })
+
+  it('warns (non-fatally) when a seed is reused across keys', () => {
+    const issues = findDuplicateSeeds({
+      experiments: { a: { seed: 'shared' }, b: { seed: 'shared' } },
+      flags: {},
+    })
+    expect(issues).toHaveLength(1)
+    expect(issues[0]?.code).toBe(AbErrorCode.ConfigInvalid)
+    expect(issues[0]?.message).toContain('reused')
+    expect(issues[0]?.context).toMatchObject({ seed: 'shared', keys: ['a', 'b'] })
+  })
+
+  it('detects reuse across an experiment and a flag', () => {
+    expect(
+      findDuplicateSeeds({ experiments: { exp: { seed: 'dup' } }, flags: { flg: { seed: 'dup' } } }),
+    ).toHaveLength(1)
+  })
+
+  it('does not flag a valid full config (unique per-key seeds)', () => {
+    expect(
+      findDuplicateSeeds({
+        experiments: { 'checkout-copy': validExperiment },
+        flags: { newCheckoutFlow: validFlag },
+      }),
+    ).toEqual([])
   })
 })

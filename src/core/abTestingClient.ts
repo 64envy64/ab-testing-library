@@ -13,7 +13,7 @@
  * React bindings live in the `./react` adapter; the demo control plane is in `server/`.
  */
 import { evaluateExperiment } from './assignment'
-import { normalizeRemoteConfig, validateRemoteConfig } from './config'
+import { findDuplicateSeeds, normalizeRemoteConfig, validateRemoteConfig } from './config'
 import { buildDebugState } from './debug'
 import { AbError, AbErrorCode, abIssue, type AbIssue } from './errors'
 import { Emitter, nowIso } from './events'
@@ -31,6 +31,7 @@ import { type CrossTabSync, createCrossTabSync } from './storageSync'
 import type {
   AbClient,
   AbLogger,
+  AbLogLevel,
   AbSdkEvent,
   AbSdkEventType,
   AdminOverrideInput,
@@ -117,6 +118,19 @@ function isSamePersistedUser(
   return current.anonymousId !== undefined && current.anonymousId === incoming.anonymousId
 }
 
+/** Route an issue code to a logger severity (the SDK advertises debug/warn/error levels). */
+function issueLogLevel(code: AbErrorCode): AbLogLevel {
+  switch (code) {
+    case AbErrorCode.StorageCorrupt:
+      return 'error'
+    case AbErrorCode.RemoteStale:
+    case AbErrorCode.ExperimentNotFound:
+      return 'debug'
+    default:
+      return 'warn'
+  }
+}
+
 class AbTestingClient implements AbClient {
   private readonly options: ResolvedOptions
   private readonly storage: PersistenceStore
@@ -139,6 +153,10 @@ class AbTestingClient implements AbClient {
   private lastAppliedVersion = -1
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private resolveReady: (() => void) | null = null
+  private readyPromise: Promise<void> = new Promise<void>((resolve) => {
+    this.resolveReady = resolve
+  })
 
   constructor(options: CreateAbClientOptions) {
     this.options = resolveOptions(options)
@@ -178,6 +196,7 @@ class AbTestingClient implements AbClient {
     this.isReady = this.computeReady()
     this.emitEvent('user.initialized')
     if (this.isReady) this.emitEvent('ready')
+    this.flushReady()
     this.changes.emit()
   }
 
@@ -314,6 +333,7 @@ class AbTestingClient implements AbClient {
       return // fail open: keep the last-good config
     }
     this.baseConfig = config
+    this.warnOnDuplicateSeeds(config)
     this.emitEvent('config.updated')
     this.changes.emit()
   }
@@ -391,6 +411,11 @@ class AbTestingClient implements AbClient {
     this.exposure.reset()
     this.overrides.clearAll()
     this.missingKeyWarnings.clear()
+    // A fresh readiness promise for the post-reset lifecycle (resolved on the next ready flip).
+    this.resolveReady = null
+    this.readyPromise = new Promise<void>((resolve) => {
+      this.resolveReady = resolve
+    })
     this.storage.remove()
     this.emitEvent('assignment.reset')
     this.changes.emit()
@@ -398,6 +423,10 @@ class AbTestingClient implements AbClient {
 
   clear(): void {
     this.reset()
+  }
+
+  ready(): Promise<void> {
+    return this.readyPromise
   }
 
   getDebugState(): DebugState {
@@ -437,7 +466,10 @@ class AbTestingClient implements AbClient {
 
   private acceptInitialConfig(config: RemoteConfig): RemoteConfig {
     const { valid, issues } = validateRemoteConfig(config)
-    if (valid) return config
+    if (valid) {
+      this.warnOnDuplicateSeeds(config)
+      return config
+    }
 
     for (const issue of issues) this.handleIssue(issue)
     if (this.options.strict) {
@@ -549,6 +581,7 @@ class AbTestingClient implements AbClient {
     this.state.cachedConfig = candidate.config as RemoteConfig
     this.state.cachedConfigVersion = version
     this.lastAppliedVersion = version
+    this.warnOnDuplicateSeeds(this.state.cachedConfig)
     this.persist()
     this.emitEvent('config.updated', { context: { version } })
     this.markSynced()
@@ -585,6 +618,7 @@ class AbTestingClient implements AbClient {
     if (next === this.isReady) return
     this.isReady = next
     if (next) this.emitEvent('ready')
+    this.flushReady()
     this.changes.emit()
   }
 
@@ -699,6 +733,14 @@ class AbTestingClient implements AbClient {
     return this.initialized && (!this.remoteConfigured || this.syncedAtLeastOnce)
   }
 
+  /** Resolve the `ready()` promise once, when readiness first flips true. */
+  private flushReady(): void {
+    if (this.isReady && this.resolveReady !== null) {
+      this.resolveReady()
+      this.resolveReady = null
+    }
+  }
+
   private persist(): void {
     this.storage.save(this.state)
     // Tell other tabs (BroadcastChannel ping; the storage event auto-fires).
@@ -719,11 +761,18 @@ class AbTestingClient implements AbClient {
 
   private handleIssue(issue: AbIssue): void {
     this.emitEvent('error', { code: issue.code, message: issue.message, context: issue.context })
+    // Route to the matching logger severity (benign stale / missing-key issues are debug,
+    // storage corruption is error, everything else warn) instead of collapsing to warn.
+    const level = issueLogLevel(issue.code)
     try {
-      this.options.logger?.warn(issue.message, issue.context)
+      this.options.logger?.[level](issue.message, issue.context)
     } catch {
       /* a logger must never break the host app */
     }
+  }
+
+  private warnOnDuplicateSeeds(config: RemoteConfig): void {
+    for (const issue of findDuplicateSeeds(config)) this.handleIssue(issue)
   }
 
   private warnMissingKey(kind: 'experiment' | 'flag', key: string): void {

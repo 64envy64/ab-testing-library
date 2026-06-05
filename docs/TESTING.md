@@ -1,7 +1,7 @@
 # Testing
 
 Tests mirror [`BEHAVIOR_CONTRACT.md`](./BEHAVIOR_CONTRACT.md) branch-for-branch. The
-suite (Vitest, jsdom) is **190+ tests across 14 files**.
+suite (Vitest, jsdom) is **198 tests across 14 files**.
 
 ```bash
 npm test            # run once
@@ -16,8 +16,8 @@ npm run test:watch  # watch mode
 - **Statistical, not hand-waved.** Hashing correctness is proven, not asserted: the
   implementation is cross-checked against canonical mmh3 vectors, pinned with golden
   snapshots (which enforce `HASH_VERSION` discipline — change the hash and CI goes red),
-  and validated with a 100k-id distribution test (±1% tolerance) plus an independence
-  test (no carryover between experiments).
+  and validated with a 100k-id distribution test (chi-square goodness-of-fit) plus an
+  independence test (no carryover between experiments).
 - **Determinism.** No `Math.random`/time in assertions; the WebSocket reconnect test uses
   fake timers; `BroadcastChannel` is tested with an in-process mock; `storage` events are
   driven by explicit `dispatchEvent`.

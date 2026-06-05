@@ -103,6 +103,29 @@ describe('remote config readiness & application', () => {
     client.destroy()
   })
 
+  it('ready() resolves after the first config.replace (with a remote)', async () => {
+    const transport = createMockRemoteTransport()
+    const { client } = makeRemoteClient(transport)
+    client.initializeUser({ id: 'user-1' })
+    let resolved = false
+    const pending = client.ready().then(() => {
+      resolved = true
+    })
+    await Promise.resolve()
+    expect(resolved).toBe(false) // not yet — the remote has not synced
+    transport.pushConfig(remoteConfig, 1)
+    await pending
+    expect(resolved).toBe(true)
+    client.destroy()
+  })
+
+  it('ready() resolves once a no-remote client is initialized', async () => {
+    const client = createAbClient({ appKey: 'noremote-ready', persistence: 'memory', defaultConfig: baseConfig })
+    client.initializeUser({ id: 'user-1' })
+    await expect(client.ready()).resolves.toBeUndefined()
+    client.destroy()
+  })
+
   it('uses the cached bootstrap config before live sync', () => {
     globalThis.localStorage.setItem(
       'abtest:boot',

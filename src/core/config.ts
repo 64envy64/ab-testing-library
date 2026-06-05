@@ -208,3 +208,40 @@ export function normalizeRemoteConfig(config: {
     flags: config.flags ?? {},
   }
 }
+
+/**
+ * Detects seeds reused across distinct experiment/flag keys. A shared seed correlates
+ * those experiments (a user lands on the "same side" of both), silently biasing
+ * concurrent tests — the exact failure the per-experiment seed exists to prevent.
+ * Non-fatal: returns warning issues and never invalidates a config (fail-open).
+ */
+export function findDuplicateSeeds(config: {
+  experiments?: Record<string, unknown>
+  flags?: Record<string, unknown>
+}): AbIssue[] {
+  const keysBySeed = new Map<string, string[]>()
+  const record = (key: string, entry: unknown): void => {
+    const seed = (entry as { seed?: unknown } | null | undefined)?.seed
+    if (typeof seed !== 'string' || seed.length === 0) return
+    const keys = keysBySeed.get(seed) ?? []
+    keys.push(key)
+    keysBySeed.set(seed, keys)
+  }
+  for (const [key, entry] of Object.entries(config.experiments ?? {})) record(key, entry)
+  for (const [key, entry] of Object.entries(config.flags ?? {})) record(key, entry)
+
+  const issues: AbIssue[] = []
+  for (const [seed, keys] of keysBySeed) {
+    if (keys.length > 1) {
+      const sorted = [...keys].sort()
+      issues.push(
+        abIssue(
+          AbErrorCode.ConfigInvalid,
+          `Seed "${seed}" is reused by ${keys.length} keys (${sorted.join(', ')}); reused seeds correlate their assignments`,
+          { seed, keys: sorted },
+        ),
+      )
+    }
+  }
+  return issues
+}

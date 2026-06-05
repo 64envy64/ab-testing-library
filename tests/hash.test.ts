@@ -10,17 +10,6 @@ import {
 
 type Weights = Array<{ key: string; weight: number }>
 
-function shares(weights: Weights, seed: string, n: number): Record<string, number> {
-  const counts: Record<string, number> = {}
-  for (let i = 0; i < n; i++) {
-    const variant = selectVariantByBucket(getBucketValue(seed, `user-${i}`), weights)
-    if (variant !== null) counts[variant] = (counts[variant] ?? 0) + 1
-  }
-  const result: Record<string, number> = {}
-  for (const [key, count] of Object.entries(counts)) result[key] = count / n
-  return result
-}
-
 describe('murmur3_32 — known vectors (cross-checked against the mmh3 reference)', () => {
   // foo / hello / "" / ("", seed 1) match canonical mmh3 outputs, which proves the
   // implementation conforms to the spec; the rest are correct-by-construction.
@@ -138,35 +127,47 @@ describe('selectVariantByBucket', () => {
   })
 })
 
-describe('distribution — 100k deterministic ids within ±1% tolerance', () => {
-  it('50/50 split lands within 49–51%', () => {
-    const s = shares(
-      [
-        { key: 'a', weight: 50 },
-        { key: 'b', weight: 50 },
-      ],
-      'dist-5050',
-      100_000,
-    )
-    expect(s['a'] ?? 0).toBeGreaterThan(0.49)
-    expect(s['a'] ?? 0).toBeLessThan(0.51)
-    expect(s['b'] ?? 0).toBeGreaterThan(0.49)
-    expect(s['b'] ?? 0).toBeLessThan(0.51)
+function bucketCounts(weights: Weights, seed: string, n: number): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const { key } of weights) counts[key] = 0
+  for (let i = 0; i < n; i++) {
+    const variant = selectVariantByBucket(getBucketValue(seed, `user-${i}`), weights)
+    if (variant !== null) counts[variant] = (counts[variant] ?? 0) + 1
+  }
+  return counts
+}
+
+// Pearson chi-square goodness-of-fit statistic against the expected weighted split.
+function chiSquare(counts: Record<string, number>, weights: Weights, n: number): number {
+  const total = weights.reduce((sum, w) => sum + w.weight, 0)
+  let chi = 0
+  for (const { key, weight } of weights) {
+    const expected = (weight / total) * n
+    const observed = counts[key] ?? 0
+    chi += (observed - expected) ** 2 / expected
+  }
+  return chi
+}
+
+// χ² critical value for df=1 at p=0.001. A meaningfully biased split blows past this; a
+// correct uniform hash lands far below (the old ±1% band was ~6σ of slack at n=100k).
+const CHI2_DF1_P001 = 10.828
+
+describe('distribution — 100k deterministic ids, chi-square goodness-of-fit', () => {
+  it('50/50 split fits the expected distribution (χ² under the df=1 critical value)', () => {
+    const weights: Weights = [
+      { key: 'a', weight: 50 },
+      { key: 'b', weight: 50 },
+    ]
+    expect(chiSquare(bucketCounts(weights, 'dist-5050', 100_000), weights, 100_000)).toBeLessThan(CHI2_DF1_P001)
   })
 
-  it('80/20 split respects weights within ±1%', () => {
-    const s = shares(
-      [
-        { key: 'a', weight: 80 },
-        { key: 'b', weight: 20 },
-      ],
-      'dist-8020',
-      100_000,
-    )
-    expect(s['a'] ?? 0).toBeGreaterThan(0.79)
-    expect(s['a'] ?? 0).toBeLessThan(0.81)
-    expect(s['b'] ?? 0).toBeGreaterThan(0.19)
-    expect(s['b'] ?? 0).toBeLessThan(0.21)
+  it('80/20 split respects weights (χ² under the df=1 critical value)', () => {
+    const weights: Weights = [
+      { key: 'a', weight: 80 },
+      { key: 'b', weight: 20 },
+    ]
+    expect(chiSquare(bucketCounts(weights, 'dist-8020', 100_000), weights, 100_000)).toBeLessThan(CHI2_DF1_P001)
   })
 
   it('two experiments bucket the same users independently (no carryover bias)', () => {

@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- **Node.js ≥ 20.17** (the toolchain is pinned to versions compatible with Node 20 LTS).
+- **Node.js ≥ 20.19** (matches `engines` in `package.json`; the toolchain — Vite 6 / Vitest 4 — requires it).
 - npm (the repo ships a `package-lock.json`; use `npm ci` for reproducible installs).
 
 ## Setup
@@ -19,6 +19,7 @@ npm test        # run the suite
 | `npm run dev` | example app (Vite) on :5173 |
 | `npm run server` | demo control plane on :8787 |
 | `npm test` / `npm run test:watch` | Vitest (run / watch) |
+| `npm run test:coverage` | Vitest with V8 coverage + thresholds |
 | `npm run typecheck` | `tsc --noEmit` for the app and node tsconfigs |
 | `npm run lint` / `npm run lint:fix` | ESLint flat config |
 | `npm run build` | dual ESM/CJS + `.d.ts` via tsup |
@@ -31,7 +32,6 @@ Every change must keep these green (CI runs all of them — see `.github/workflo
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build && npm run publint && npm run attw && npm run size
-npm audit
 ```
 
 ## Git hooks

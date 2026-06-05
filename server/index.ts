@@ -46,6 +46,8 @@ export interface ControlPlaneOptions {
   config?: RemoteConfig
   adminToken?: string
   corsOrigin?: string
+  /** Initial config version. Defaults to `Date.now()` so versions never rewind across restarts. */
+  initialVersion?: number
 }
 
 export interface ControlPlane {
@@ -65,7 +67,14 @@ interface RequestContext {
 
 export function createControlPlane(options: ControlPlaneOptions = {}): ControlPlane {
   const seed = options.config ?? DEFAULT_CONFIG
-  const store = new ConfigStore(validateRemoteConfig(seed).valid ? seed : { experiments: {}, flags: {} }, 1)
+  // Seed from an epoch by default: an in-memory store would otherwise reset to 1 on
+  // every restart, and a returning client with a higher cached version would reject the
+  // restarted server's (genuinely current) config as stale. Epoch versions never rewind.
+  const initialVersion = options.initialVersion ?? Date.now()
+  const store = new ConfigStore(
+    validateRemoteConfig(seed).valid ? seed : { experiments: {}, flags: {} },
+    initialVersion,
+  )
   const adminToken = options.adminToken ?? resolveAdminToken().token
   const corsOrigin = options.corsOrigin ?? process.env.AB_CORS_ORIGIN ?? '*'
 

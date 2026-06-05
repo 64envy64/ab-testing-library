@@ -20,5 +20,17 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx}'],
     restoreMocks: true,
     clearMocks: true,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      reporter: ['text-summary'],
+      // Floors the suite already clears (measured ~89/84/89/91); a regression trips CI.
+      thresholds: {
+        statements: 85,
+        branches: 80,
+        functions: 85,
+        lines: 88,
+      },
+    },
   },
 })

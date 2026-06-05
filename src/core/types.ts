@@ -308,6 +308,8 @@ export interface AbClient {
   getDebugState(): DebugState
   /** Subscribe to store changes; returns an unsubscribe function. */
   subscribe(listener: () => void): () => void
+  /** Resolves once the client is ready (initialized, and — with a remote — after the first config sync). */
+  ready(): Promise<void>
   /** QA: force a variant for an experiment (read-time only — never persisted or tracked). */
   setForcedOverride(experimentKey: string, variant: string): void
   /** Clear a single forced override, or all when no key is given. */

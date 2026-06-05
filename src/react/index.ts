@@ -12,6 +12,7 @@
 export { AbTestingProvider, type AbTestingProviderProps } from './AbTestingProvider'
 export { useExperiment } from './useExperiment'
 export { useFeatureFlag } from './useFeatureFlag'
+export { useAbClient } from './store'
 
 // Convenience re-exports of the types the hooks return.
 export type { AbClient, AssignmentResult, FeatureFlagResult, EvaluateOptions } from '../core/types'
