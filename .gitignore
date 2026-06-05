@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.log
+_tz_extracted.txt
+.DS_Store
+.vite/
+playground/dist/
+*.tsbuildinfo
