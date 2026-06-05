@@ -8,7 +8,7 @@ plane.
 ![license](https://img.shields.io/badge/license-MIT-22c55e)
 ![types](https://img.shields.io/badge/types-included-22c55e)
 ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-22c55e)
-![core size](https://img.shields.io/badge/core-~6.7kB%20br-22c55e)
+![core size](https://img.shields.io/badge/core-~6.8kB%20br-22c55e)
 
 ```ts
 const client = createAbClient({ appKey: 'web', remote: { url: 'wss://…/config/stream' } })

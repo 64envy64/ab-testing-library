@@ -28,6 +28,7 @@ export type {
   AssignmentReason,
   AssignmentSource,
   AssignmentResult,
+  FeatureFlagResult,
   ExposureEvent,
   AbLogger,
   AbLogLevel,

@@ -103,12 +103,12 @@
   },
   "size-limit": [
     {
-      "name": "core (esm, gzip)",
+      "name": "core (esm, brotli)",
       "path": "dist/index.js",
       "limit": "8 kB"
     },
     {
-      "name": "react adapter (esm, gzip)",
+      "name": "react adapter (esm, brotli)",
       "path": "dist/react/index.js",
       "limit": "4 kB"
     }
