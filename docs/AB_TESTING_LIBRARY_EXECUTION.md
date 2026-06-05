@@ -1,8 +1,8 @@
 # A/B Testing Frontend Library Execution Brief
 
-Дата: 2026-06-04
+Date: 2026-06-04
 
-Цель: реализовать A/B testing SDK: deterministic assignment, sticky local persistence, React adapter, protected config backend, realtime full config replace, admin/mock UI, feature flags, exposure tracking, tests, packaging checks and clear documentation.
+Goal: implement an A/B testing SDK: deterministic assignment, sticky local persistence, React adapter, protected config backend, realtime full config replace, admin/mock UI, feature flags, exposure tracking, tests, packaging checks and clear documentation.
 
 ## Guiding Documents
 

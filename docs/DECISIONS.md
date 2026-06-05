@@ -1,12 +1,12 @@
 # Decisions
 
-Дата: 2026-06-04
+Date: 2026-06-04
 
-Этот документ фиксирует архитектурные решения и границы scope. Цель — закрыть требования задания, не расползаясь в недостроенную feature-flag платформу.
+This document records architectural decisions and scope boundaries. The goal is to satisfy the assignment requirements without sprawling into an unfinished feature-flag platform.
 
 ## Decision Principle
 
-Мы строим не mini LaunchDarkly, а production-shaped frontend A/B SDK:
+We are not building a mini LaunchDarkly, but a production-shaped frontend A/B SDK:
 
 - deterministic assignment;
 - sticky local persistence;
@@ -17,42 +17,42 @@
 - exposure tracking;
 - tests, packaging and docs.
 
-Критерий: каждая реализованная часть закрывает прямое требование или реальный ревью-вопрос. Все остальное резервируется как extension point.
+Criterion: every implemented part addresses a direct requirement or a real review question. Everything else is reserved as an extension point.
 
 ## Implemented Now
 
 ### SDK Shape
 
-- `createAbClient()` вместо скрытого глобального singleton.
+- `createAbClient()` instead of a hidden global singleton.
 - Multiple independent experiments.
-- Feature flags через тот же evaluation pipeline.
-- Factory-first architecture для SSR, tests и multi-instance use cases.
+- Feature flags through the same evaluation pipeline.
+- Factory-first architecture for SSR, tests and multi-instance use cases.
 - `subscribe(listener) -> unsubscribe` for React adapter and imperative consumers.
-- Optional client-side singleton может быть добавлен как sugar, но не является основой.
+- An optional client-side singleton can be added as sugar, but is not the foundation.
 
-Почему:
+Why:
 
-- SSR не должен шарить user state между запросами.
-- Тесты получают независимые instances.
-- Host-приложение может иметь несколько environments или namespaces.
+- SSR must not share user state between requests.
+- Tests get independent instances.
+- The host application may have multiple environments or namespaces.
 
 ### Assignment
 
 - MurmurHash3 x86 32-bit.
-- Correct JS 32-bit arithmetic через `Math.imul` и `>>> 0`.
-- `hashVersion` в persisted assignment.
+- Correct JS 32-bit arithmetic via `Math.imul` and `>>> 0`.
+- `hashVersion` in persisted assignment.
 - Per-experiment `seed`.
-- `bucketingId` как randomization/provenance id.
+- `bucketingId` as randomization/provenance id.
 - Key-sorted variants before bucketing.
 - Relative variant weights.
 - Sticky provenance validation.
 
-Почему:
+Why:
 
-- Assignment синхронный, portable и deterministic.
-- `hashVersion` делает смену алгоритма явным rerandomization событием.
-- `seed` отделяет public experiment key от randomization salt.
-- `bucketingId` готовит SDK к future server-side assignment store.
+- Assignment is synchronous, portable and deterministic.
+- `hashVersion` makes an algorithm change an explicit rerandomization event.
+- `seed` separates the public experiment key from the randomization salt.
+- `bucketingId` prepares the SDK for a future server-side assignment store.
 
 ### Sticky Semantics
 
@@ -62,7 +62,7 @@
 - Removed variant recomputes or falls back to control.
 - Seed/hashVersion change recomputes.
 
-Почему:
+Why:
 
 - Pure deterministic hash is not sticky when split boundaries change.
 - Sticky behavior must be explicit and testable.
@@ -73,7 +73,7 @@
 - Persisted assignment stores provenance, not runtime reason.
 - `VARIANT_REMOVED_REASSIGNED` and `VARIANT_REMOVED_FALLBACK` are separate reasons.
 
-Почему:
+Why:
 
 - Persisted `reason` becomes stale across sessions.
 - Runtime reason powers debug UI, tests and exposure eligibility.
@@ -87,7 +87,7 @@
 - React exposure only after commit.
 - StrictMode double invoke deduped.
 
-Почему:
+Why:
 
 - A/B testing without exposure events is not measurable.
 - React concurrent render must remain side-effect free.
@@ -99,7 +99,7 @@
 - Structured error/event codes.
 - All callbacks are wrapped and never throw into the host app.
 
-Почему:
+Why:
 
 - The requirement explicitly calls out logging extensibility.
 - Consumers need structured diagnostics without scraping free-form strings.
@@ -116,7 +116,7 @@
 - `reset()` / `clear()` removes user, assignments and config cache.
 - `createAbClient({ persistence: "local" | "memory", tracking: boolean })`.
 
-Почему:
+Why:
 
 - Email / trait persistence is a PII risk.
 - Local sticky assignment is per-device.
@@ -134,7 +134,7 @@
 - Unsupported `schemaVersion` is safely discarded in v1; migrations are reserved.
 - Last-known config and config version persisted for bootstrap.
 
-Почему:
+Why:
 
 - Browser storage can be unavailable, disabled, quota-limited or corrupted.
 - Bootstrap config reduces flicker for returning users.
@@ -150,7 +150,7 @@
 - React subpath includes `"use client"`.
 - Core has no React imports.
 
-Почему:
+Why:
 
 - SSR and Next.js are common React integration targets in 2026.
 - Hydration must not crash.
@@ -166,7 +166,7 @@
 - Stale/replayed updates ignored.
 - Connection status events for UI.
 
-Почему:
+Why:
 
 - Full replace makes experiment removal unambiguous.
 - It avoids patch ambiguity, gap detection and delta replay.
@@ -183,7 +183,7 @@
 - No raw PII in logs.
 - In-memory store is allowed for assignment scope, but shaped as a control plane.
 
-Почему:
+Why:
 
 - The task asks for remote control and protected backend expectations.
 - Admin mutation must be genuinely protected, not hand-waved.
@@ -194,7 +194,7 @@
 - `BroadcastChannel` used when available.
 - Incoming tab messages update memory without echoing back to storage.
 
-Почему:
+Why:
 
 - Storage events are required.
 - BroadcastChannel is a cleaner modern primitive.
@@ -210,7 +210,7 @@
 - `getDebugState()` exposes read-only SDK state.
 - Admin/mock page can live-edit split and enabled state.
 
-Почему:
+Why:
 
 - QA/admin controls should not be overwritten by remote refresh.
 - Forced overrides are read-time only and never persisted.
@@ -228,9 +228,9 @@
 - CI: lint, typecheck, test, build, publint, arethetypeswrong, size limit.
 - Dual package output with typed exports.
 
-Почему:
+Why:
 
-- Reviewers will run from clean clone first.
+- Reviewers will run from a clean clone first.
 - Packaging quality is visible immediately in a library submission.
 
 ## Simplified For V1

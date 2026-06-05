@@ -1,54 +1,54 @@
 # Behavior Contract
 
-Дата: 2026-06-04
+Date: 2026-06-04
 
-Этот документ фиксирует поведение A/B testing SDK как тестируемый контракт. Реализация и unit tests должны зеркалить этот контракт ветка-в-ветку.
+This document captures the behavior of the A/B testing SDK as a testable contract. The implementation and unit tests must mirror this contract branch-for-branch.
 
 ## Core Principle
 
-Ключевые принципы SDK:
+Key principles of the SDK:
 
-- не ронять host-приложение из-за runtime/config/network проблем;
-- сохранять deterministic и sticky assignment в рамках устройства;
-- явно отделять implemented behavior от future extensions;
-- держать React render чистым, а analytics side effects выполнять только после commit;
-- честно документировать границы: local persistence не равна cross-device assignment store.
+- do not crash the host application due to runtime/config/network problems;
+- preserve deterministic and sticky assignment within a device;
+- explicitly separate implemented behavior from future extensions;
+- keep the React render pure, and run analytics side effects only after commit;
+- honestly document the boundaries: local persistence is not the same as a cross-device assignment store.
 
 ## Public Runtime Surfaces
 
 ### Imperative Core API
 
-- `createAbClient(options)` создает независимый client instance.
-- `initializeUser(userData, options?)` инициализирует user session и assignment context.
-- `updateUser(userData, options?)` обновляет user state; reassignment только при явном `reassignVariant: true`.
-- `getAssignment(experimentKey, options?)` возвращает полную evaluation-информацию.
-- `getVariant(experimentKey, options?)` возвращает только variant key и может track exposure.
-- `isFeatureEnabled(flagKey, options?)` использует тот же evaluation pipeline, что и experiments.
-- `setConfig(config)` применяет base/default config.
-- `setAdminOverride(partialConfig)` применяет admin/debug override layer поверх remote/default config.
-- `clearAdminOverride(key?)` очищает admin override для одного key или всего слоя.
-- `setForcedOverride(key, variant)` применяет QA/URL forced override для read-time evaluation.
-- `clearForcedOverride(key?)` очищает forced override для одного key или всего слоя.
-- `loadForcedOverridesFromUrl(searchParams, options?)` парсит URL overrides, например `?ab_force_checkout=B`.
-- `subscribe(listener)` подписывает imperative consumers и React adapter на изменения store; возвращает `unsubscribe`.
-- `resetAssignment(experimentKey)` очищает assignment одного experiment.
-- `reset()` / `clear()` очищает user, assignments, exposure state and overrides. If a
+- `createAbClient(options)` creates an independent client instance.
+- `initializeUser(userData, options?)` initializes the user session and assignment context.
+- `updateUser(userData, options?)` updates user state; reassignment happens only with an explicit `reassignVariant: true`.
+- `getAssignment(experimentKey, options?)` returns the full evaluation information.
+- `getVariant(experimentKey, options?)` returns only the variant key and may track exposure.
+- `isFeatureEnabled(flagKey, options?)` uses the same evaluation pipeline as experiments.
+- `setConfig(config)` applies the base/default config.
+- `setAdminOverride(partialConfig)` applies an admin/debug override layer on top of the remote/default config.
+- `clearAdminOverride(key?)` clears the admin override for a single key or for the entire layer.
+- `setForcedOverride(key, variant)` applies a QA/URL forced override for read-time evaluation.
+- `clearForcedOverride(key?)` clears the forced override for a single key or for the entire layer.
+- `loadForcedOverridesFromUrl(searchParams, options?)` parses URL overrides, for example `?ab_force_checkout=B`.
+- `subscribe(listener)` subscribes imperative consumers and the React adapter to store changes; returns `unsubscribe`.
+- `resetAssignment(experimentKey)` clears the assignment of a single experiment.
+- `reset()` / `clear()` clears user, assignments, exposure state and overrides. If a
   live remote config has already synced in this runtime, that non-PII config snapshot
   remains available so re-initializing a user does not get stuck in `isReady=false`.
-- `destroy()` закрывает transports, storage listeners и cross-tab channel.
-- `getDebugState()` возвращает read-only snapshot для admin/debug UI.
+- `destroy()` closes transports, storage listeners and the cross-tab channel.
+- `getDebugState()` returns a read-only snapshot for the admin/debug UI.
 
 ### React API
 
-- `AbTestingProvider` передает stable client instance.
-- `useExperiment(experimentKey)` читает assignment через SSR-safe external store.
-- `useFeatureFlag(flagKey)` читает feature flag через тот же store.
-- React adapter не выполняет side effects во время render.
-- Exposure из React отправляется только в `useEffect` после commit.
+- `AbTestingProvider` provides a stable client instance.
+- `useExperiment(experimentKey)` reads the assignment through an SSR-safe external store.
+- `useFeatureFlag(flagKey)` reads the feature flag through the same store.
+- The React adapter does not perform side effects during render.
+- Exposure from React is dispatched only in `useEffect` after commit.
 
 ## Assignment Record
 
-Persisted assignment хранит provenance, а не runtime reason.
+The persisted assignment stores provenance, not the runtime reason.
 
 ```ts
 type PersistedAssignment = {
@@ -62,11 +62,11 @@ type PersistedAssignment = {
 };
 ```
 
-Почему `reason` не хранится:
+Why `reason` is not stored:
 
-- при первом расчете runtime reason может быть `COMPUTED`;
-- на следующей сессии тот же assignment уже оценивается как `STICKY`;
-- persisted `reason` стал бы устаревшим и вводил бы debug/analytics в заблуждение.
+- on the first computation the runtime reason may be `COMPUTED`;
+- on the next session the same assignment is already evaluated as `STICKY`;
+- a persisted `reason` would become stale and would mislead debug/analytics.
 
 ## Runtime Assignment Result
 
@@ -101,7 +101,7 @@ Forward compatibility notes:
 
 ## Evaluation Pipeline
 
-`getAssignment(key)` должен идти по одному deterministic pipeline:
+`getAssignment(key)` must follow a single deterministic pipeline:
 
 ```text
 1. effectiveConfig = merge(default -> persisted bootstrap -> remote@version -> adminOverride)
