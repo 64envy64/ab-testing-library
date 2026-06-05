@@ -35,6 +35,13 @@ function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)))
 }
 
+/** Versions are epoch-seeded (long, monotonic). Show a short, still-ticking suffix. */
+function formatVersion(version: number | null): string {
+  if (version === null) return '—'
+  const s = String(version)
+  return '#' + (s.length > 6 ? s.slice(-4) : s)
+}
+
 function toConfigStreamUrl(apiBase: string): string | null {
   try {
     const url = new URL(apiBase)
@@ -158,7 +165,7 @@ export function AdminConfigPanel({ apiBase, adminToken }: AdminConfigPanelProps)
           setVersion(detail.currentVersion)
           setStatus({
             kind: 'err',
-            text: `Config changed elsewhere — now at version ${detail.currentVersion}. Review and Apply again to overwrite.`,
+            text: `Config changed elsewhere — now at version ${formatVersion(detail.currentVersion)}. Review and Apply again to overwrite.`,
           })
           return
         }
@@ -169,7 +176,7 @@ export function AdminConfigPanel({ apiBase, adminToken }: AdminConfigPanelProps)
       const n = data.clients ?? 0
       setStatus({
         kind: 'ok',
-        text: `Applied — now at version ${data.version} · broadcast to ${n} ${n === 1 ? 'client' : 'clients'}.`,
+        text: `Applied — now at version ${formatVersion(data.version)} · broadcast to ${n} ${n === 1 ? 'client' : 'clients'}.`,
       })
     } catch (error) {
       setStatus({ kind: 'err', text: `Update failed: ${error instanceof Error ? error.message : String(error)}` })
@@ -239,7 +246,7 @@ export function AdminConfigPanel({ apiBase, adminToken }: AdminConfigPanelProps)
           {busy ? 'Applying…' : 'Apply to backend'}
         </button>
         <span className="badge">
-          version <span className="mono">{version ?? '—'}</span>
+          version <span className="mono">{formatVersion(version)}</span>
         </span>
       </div>
       {status.text !== '' && (

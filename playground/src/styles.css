@@ -1,31 +1,30 @@
 :root {
-  /* Void-black canvas with a single emerald accent (terminal-native). */
-  --bg: #08080a;
-  --surface: #101013;
-  --surface-2: #16161a;
-  --surface-3: #1c1c21;
-  --border: #232328;
-  --border-strong: #2f2f36;
+  /* Flat dark canvas, single coral accent — no borders, no shadows. */
+  --bg: #0c0c0e;
+  --surface: #161618; /* cards */
+  --surface-2: #1e1e21; /* nested blocks / inputs / ghost buttons */
+  --surface-3: #27272c; /* inert tracks */
+  --surface-hover: #232327;
 
-  --text: #f1f1f3;
-  --muted: #9c9ca5;
-  --faint: #6b6b75;
+  --text: #f2f2f4;
+  --muted: #9a9aa3;
+  --faint: #6a6a73;
 
-  --accent: #34d399;
-  --accent-hover: #4ade80;
-  --accent-dim: rgba(52, 211, 153, 0.14);
-  --accent-text: #04130b;
+  --accent: #f0584f; /* coral */
+  --accent-hover: #f46a61;
+  --accent-dim: rgba(240, 88, 79, 0.14);
+  --accent-text: #ffffff;
 
   --ok: #34d399;
-  --ok-bg: rgba(52, 211, 153, 0.12);
+  --ok-bg: rgba(52, 211, 153, 0.13);
   --warn: #fbbf24;
-  --warn-bg: rgba(251, 191, 36, 0.12);
+  --warn-bg: rgba(251, 191, 36, 0.13);
   --err: #f87171;
-  --err-bg: rgba(248, 113, 113, 0.12);
+  --err-bg: rgba(248, 113, 113, 0.13);
 
-  --radius-lg: 14px;
-  --radius: 10px;
-  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --radius: 12px;
+  --radius-sm: 9px;
   --radius-pill: 999px;
 
   --mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", "Menlo", monospace;
@@ -52,10 +51,16 @@ body {
   background: var(--accent-dim);
 }
 
+/* The only outline in the UI: a keyboard-focus ring for accessibility. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .app {
   max-width: 1140px;
   margin: 0 auto;
-  padding: 44px 24px 80px;
+  padding: 40px 20px 72px;
 }
 
 /* ── top bar ── */
@@ -65,14 +70,12 @@ body {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 28px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
 }
 
 .topbar h1 {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 650;
   letter-spacing: -0.01em;
   margin: 0;
 }
@@ -85,17 +88,22 @@ body {
 }
 
 /* ── grid + cards ──
-   Deterministic equal-height columns: three across on desktop, one on
-   narrow viewports. No auto-fit (which can orphan the third card), and
-   no align-items:start (which lets cards render at unequal heights). */
+   Equal-height columns: three across on desktop, two on tablets, one on
+   phones. span-2 cards always span the full row. */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
   align-items: stretch;
 }
 
-@media (max-width: 880px) {
+@media (max-width: 920px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -105,14 +113,8 @@ body {
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 22px;
-  transition: border-color 0.15s var(--ease);
-}
-
-.card:hover {
-  border-color: var(--border-strong);
 }
 
 .card.span-2 {
@@ -121,9 +123,9 @@ body {
 
 .card h2 {
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 650;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   color: var(--muted);
   margin: 0 0 6px;
 }
@@ -151,13 +153,13 @@ body {
 input[type="text"],
 input[type="email"] {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border-strong);
+  padding: 11px 13px;
+  border: none;
   border-radius: var(--radius-sm);
   font: inherit;
   color: var(--text);
   background: var(--surface-2);
-  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+  transition: background 0.15s var(--ease);
 }
 
 input[type="text"]::placeholder,
@@ -167,9 +169,7 @@ input[type="email"]::placeholder {
 
 input[type="text"]:focus,
 input[type="email"]:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  background: var(--surface-3);
 }
 
 .row {
@@ -180,18 +180,14 @@ input[type="email"]:focus {
 
 button {
   font: inherit;
-  font-weight: 550;
+  font-weight: 600;
   cursor: pointer;
+  border: none;
   border-radius: var(--radius-sm);
-  padding: 9px 15px;
-  border: 1px solid transparent;
-  transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
-    color 0.15s var(--ease), opacity 0.15s var(--ease);
-}
-
-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  padding: 10px 16px;
+  background: var(--surface-2);
+  color: var(--text);
+  transition: background 0.15s var(--ease), color 0.15s var(--ease), opacity 0.15s var(--ease);
 }
 
 button.primary {
@@ -204,12 +200,11 @@ button.primary:hover:not(:disabled) {
 
 button.ghost {
   background: var(--surface-2);
-  border-color: var(--border-strong);
-  color: var(--text);
+  color: var(--muted);
 }
 button.ghost:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
 button:disabled {
@@ -238,16 +233,15 @@ button:disabled {
   height: 23px;
   border-radius: var(--radius-pill);
   background: var(--surface-3);
-  border: 1px solid var(--border-strong);
   position: relative;
-  transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
+  transition: background 0.18s var(--ease);
   flex: none;
 }
 .toggle .track::after {
   content: "";
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 3px;
+  left: 3px;
   width: 17px;
   height: 17px;
   border-radius: 50%;
@@ -256,14 +250,14 @@ button:disabled {
 }
 .toggle input:checked + .track {
   background: var(--accent);
-  border-color: var(--accent);
 }
 .toggle input:checked + .track::after {
   transform: translateX(17px);
-  background: var(--accent-text);
+  background: #fff;
 }
 .toggle input:focus-visible + .track {
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ── badges + pills ── */
@@ -271,13 +265,12 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
+  padding: 4px 11px;
   border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-2);
   color: var(--muted);
-  border: 1px solid var(--border);
   white-space: nowrap;
 }
 .badge .dot {
@@ -289,17 +282,14 @@ button:disabled {
 .badge.ok {
   background: var(--ok-bg);
   color: var(--ok);
-  border-color: transparent;
 }
 .badge.warn {
   background: var(--warn-bg);
   color: var(--warn);
-  border-color: transparent;
 }
 .badge.err {
   background: var(--err-bg);
   color: var(--err);
-  border-color: transparent;
 }
 
 .mono {
@@ -325,19 +315,17 @@ button:disabled {
   word-break: break-word;
 }
 
-/* ── gated section ── */
+/* ── gated section (flat coral-tinted block, no rule) ── */
 .gated {
   margin-top: 16px;
   padding: 14px 16px;
   border-radius: var(--radius);
   background: var(--accent-dim);
-  border: 1px solid transparent;
-  border-left: 2px solid var(--accent);
 }
 .gated h3 {
   margin: 0 0 4px;
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--accent);
 }
 .gated p {
@@ -363,7 +351,7 @@ button:disabled {
 .config-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
   margin-bottom: 4px;
 }
 @media (max-width: 720px) {
@@ -374,7 +362,6 @@ button:disabled {
 
 .config-block {
   background: var(--surface-2);
-  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
 }
@@ -388,7 +375,7 @@ button:disabled {
 }
 .config-block-head strong {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .config-foot {
@@ -408,7 +395,7 @@ button:disabled {
 .slider-row .value {
   font-family: var(--mono);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 650;
   min-width: 46px;
   text-align: right;
   color: var(--accent);
@@ -427,7 +414,7 @@ input[type="range"]:disabled {
   opacity: 0.5;
 }
 
-/* WebKit / Blink — track is painted with a gradient up to --fill */
+/* WebKit / Blink — track painted with a gradient up to --fill */
 input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: var(--radius-pill);
@@ -445,19 +432,15 @@ input[type="range"]::-webkit-slider-thumb {
   height: 18px;
   border-radius: 50%;
   background: #fff;
-  border: 1px solid var(--accent);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  transition: box-shadow 0.15s var(--ease), transform 0.1s var(--ease);
-}
-input[type="range"]:hover:not(:disabled)::-webkit-slider-thumb {
-  box-shadow: 0 0 0 5px var(--accent-dim);
+  border: none;
+  transition: transform 0.1s var(--ease);
 }
 input[type="range"]:active:not(:disabled)::-webkit-slider-thumb {
-  transform: scale(1.08);
-  box-shadow: 0 0 0 7px var(--accent-dim);
+  transform: scale(1.12);
 }
 input[type="range"]:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 5px var(--accent-dim);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* Firefox — native progress fill */
@@ -476,14 +459,7 @@ input[type="range"]::-moz-range-thumb {
   height: 18px;
   border-radius: 50%;
   background: #fff;
-  border: 1px solid var(--accent);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-input[type="range"]:hover:not(:disabled)::-moz-range-thumb {
-  box-shadow: 0 0 0 5px var(--accent-dim);
-}
-input[type="range"]:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 5px var(--accent-dim);
+  border: none;
 }
 
 pre.debug {
@@ -492,22 +468,23 @@ pre.debug {
   font-size: 11.5px;
   line-height: 1.6;
   color: #c9ccd1;
-  background: #0b0b0d;
-  border: 1px solid var(--border);
+  background: var(--bg);
   border-radius: var(--radius);
   padding: 16px;
   overflow: auto;
   max-height: 300px;
 }
 
+/* Ultra-subtle separator — spacing does most of the work. */
 .section-divider {
   height: 1px;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.05);
   margin: 18px 0;
+  border: none;
 }
 
-/* push trailing state/actions to the card bottom so equal-height rows
-   read as deliberate rather than padded with empty space */
+/* Push trailing state/actions to the card bottom so equal-height rows
+   read as deliberate rather than padded with empty space. */
 .card-foot {
   margin-top: auto;
   padding-top: 18px;
@@ -536,7 +513,7 @@ pre.debug {
   border-radius: var(--radius-sm);
 }
 .eventlog-row:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.025);
 }
 .eventlog-time {
   color: var(--faint);
@@ -544,7 +521,7 @@ pre.debug {
 }
 .eventlog-tag {
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: center;
@@ -574,4 +551,31 @@ pre.debug {
   color: var(--faint);
   font-size: 13px;
   margin: 0;
+}
+
+/* ── tighter spacing + stacked log rows on phones ── */
+@media (max-width: 620px) {
+  .app {
+    padding: 28px 14px 56px;
+  }
+  .card {
+    padding: 18px;
+  }
+  .eventlog-row {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+  .eventlog-tag {
+    justify-self: start;
+  }
+}
+
+/* ── a11y: honour reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

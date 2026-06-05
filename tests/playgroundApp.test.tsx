@@ -187,7 +187,7 @@ describe('AdminConfigPanel', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /Apply to backend/i }))
     await waitFor(() => {
-      expect(screen.getByText(/changed elsewhere.*version 7/i)).toBeTruthy()
+      expect(screen.getByText(/changed elsewhere.*#7/i)).toBeTruthy()
     })
   })
 
@@ -223,7 +223,7 @@ describe('AdminConfigPanel', () => {
     await waitFor(() => {
       expect((screen.getByLabelText('variant-b weight') as HTMLInputElement).value).toBe('30')
       expect((screen.getByLabelText('flag rollout') as HTMLInputElement).value).toBe('65')
-      expect(screen.getByText('2')).toBeTruthy()
+      expect(screen.getByText('#2')).toBeTruthy()
     })
   })
 })
